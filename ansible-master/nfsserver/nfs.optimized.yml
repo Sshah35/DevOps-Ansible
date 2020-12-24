@@ -1,0 +1,46 @@
+--- # NFS server playbook
+- hosts: apacheweb
+  user: test
+  sudo: yes
+  connection: ssh
+  gather_facts: yes
+  vars:
+    distribution: RedHat
+    nfsutils_pkg: nfs-utils
+    nfsserver_service: nfs-server
+    rpcbind_service: rpcbind
+    export_path: /var/share
+    client_path: /mnt/remote
+  tasks:
+  - name: Install the NFS server utilities, services
+    yum: pkg={{ nfsutils_pkg }}  state=latest
+    notify:
+    - StartServerServices
+    - InstallClientPackages
+    - CreateClientMount
+    - ClientMountServerResources
+    - TestServerAvailability
+  - name: Copy the export file to remote server
+    copy: src=files/exports dest=/etc/exports owner=root group=root mode=644
+  handlers:
+  - name: StartServerServices
+    service: name={{ item }} state=restarted
+    with_items: 
+    - "{{ rpcbind_service }}"
+    - "{{ nfsserver_service }}"
+  - name: InstallClientPackages
+    yum: pkg={{ nfsutils_pkg }}  state=latest
+    delegate_to: appserver
+    notify: StartServerServices
+  - name: StartClientServices
+    service: name={{ rpcbind_service }} state=started
+    delegate_to: appserver
+  - name: CreateClientMount
+    file: path={{ client_path }} state=directory mode=755
+    delegate_to: appserver
+  - name: ClientMountServerResources
+    shell: mount -t nfs apacheweb:{{ export_path }} {{ client_path }}
+    register: result
+    delegate_to: appserver
+  - name: TestServerAvailability
+    debug: var=result

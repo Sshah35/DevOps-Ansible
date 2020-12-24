@@ -1,0 +1,33 @@
+--- # Build an Apache Web server
+- hosts: appserver
+  user: test
+  sudo: yes
+  connection: ssh
+  gather_facts: yes
+  vars:
+    apache_pkg: httpd
+    distribution: "{{ ansible_os_family }}"
+    apache_version: 2.4
+    apache_dir: /var/www/sample
+    apache_fqdn: first.example.com
+  tasks:
+    - name: Install the Web Package
+      yum: pkg={{ apache_pkg }} state=latest
+    - name: Create the web server directory
+      file: path={{ apache_dir }} state=directory mode=644
+    - name: Copy the Apache configuration file to remote host
+      copy: src=files/servers.conf dest=/etc/httpd/conf.d/servers.conf owner=root group=root mode=644
+    - name: Copy and untar the source for the site
+      unarchive: src=files/index.tar.gz dest={{ apache_dir }}
+      notify:
+        - StartHttpd
+        - TestHttpd
+        - DisplayResult
+  handlers: 
+    - name: StartHttpd
+      service: name={{ apache_pkg }} state=started
+    - name: TestHttpd
+      shell: curl http://{{ apache_fqdn }}
+      register: result
+    - name: DisplayResult
+      debug: var=result

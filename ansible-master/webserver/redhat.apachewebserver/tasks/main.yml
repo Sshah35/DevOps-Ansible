@@ -1,0 +1,15 @@
+- name: Install the Web Package
+  yum: pkg={{ apache_pkg }} state=latest
+- name: Create the web server directory
+  file: path={{ apache_dir }} state=directory mode=644
+- name: Copy the Apache configuration file to remote host
+  copy: src=files/servers.conf dest=/etc/httpd/conf.d/servers.conf owner=root group=root mode=644
+- name: Add httpd to firewall
+  shell: firewall-cmd --add-service=httpd --permanent
+  shell: firewall-cmd --reload
+- name: Copy and untar the source for the site
+  unarchive: src=files/index.tar.gz dest={{ apache_dir }}
+  notify:
+    - StartHttpd
+    - TestHttpd
+    - DisplayResult

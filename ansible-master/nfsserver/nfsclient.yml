@@ -1,0 +1,15 @@
+--- #master playbook for Role baed Apache web deplayment
+- hosts: appserver
+  user: test
+  sudo: yes
+  connection: ssh
+  pre_tasks:
+  - name: How long the ROLE took to run
+    raw: date > /home/test/duration.log
+  roles: 
+  - nfs.client
+  post_tasks:
+  - name: How long the ROLE took to run
+    raw: date >> /home/test/duration.log
+
+

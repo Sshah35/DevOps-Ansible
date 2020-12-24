@@ -1,0 +1,10 @@
+- name: InstallClientPackages
+  yum: pkg={{ nfsutils_pkg }}  state=latest
+  notify: StartServerServices
+- name: StartClientServices
+  service: name={{ rpcbind_service }} state=started
+- name: CreateClientMount
+  file: path={{ client_path }} state=directory mode=755
+- name: ClientMountServerResources
+  shell: mount -t nfs apacheweb:{{ export_path }} {{ client_path }}
+  register: result

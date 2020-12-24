@@ -1,0 +1,28 @@
+--- # Build an Apache Web server
+- hosts: appserver
+  user: test
+  sudo: yes
+  connection: ssh
+  gather_facts: yes
+  vars:
+    apache_pkg: httpd
+    distribution: redhat
+    apache_version: 2.4
+    apache_dir: /var/www/sample
+    apache_fqdn: second.example.com
+  tasks:
+    - name: Install the Web Package
+      yum: pkg=httpd state=latest
+    - name: Create the web server directory
+      file: path=/var/www/sample state=directory mode=644
+    - name: Copy the Apache configuration file to remote host
+      copy: src=files/servers.conf dest=/etc/httpd/conf.d/servers.conf owner=root mode=644
+    - name: Copy and untar the source for the site
+      unarchive: src=files/index.tar.gz dest=/var/www/sample
+    - name: Start the Web server
+      service: name=httpd state=started
+    - name: Test the web server
+      shell: curl http://client.example.com
+      register: result
+    - name: DisplayResult
+      debug: var=result
